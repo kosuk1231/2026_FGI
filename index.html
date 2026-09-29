@@ -128,68 +128,6 @@ table{border-collapse:collapse;width:100%}
 .acts{display:flex;gap:4px;flex-wrap:wrap}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 
-/* ── 명단 → 시간 배정: 한 사람의 가능 시간 입력 ── */
-const slotLabel = s => `${s.date} ${s.time}`;
-function openSlotEditor(id){
-  const p=A.people.find(x=>x.ID===id); const mine=slotsOf(p);
-  const pending=['후보','요청함','보류'].includes(p['상태']);
-  openDlg(`<div class="g-${esc(p['그룹'])}"><div class="row"><h2 style="margin:0">${esc(p['성명'])} 가능 시간</h2><span class="tag gtag">${esc(p['그룹'])}</span></div>
-    <p class="muted small">전화·문자로 확인한 시간을 직접 입력합니다. 참여자가 링크로 다시 응답하면 그 내용으로 바뀝니다.</p>
-    <div class="picklist">${A.slots.map(s=>{
-      const other = s.group && s.group!==p['그룹'];
-      return `<label><input type="checkbox" name="sl" value="${esc(s.id)}" ${mine.includes(s.id)?'checked':''}>
-        <span class="who"><b>${esc(slotLabel(s))}</b><br><small>진행 ${esc(s.moderator)}${s.group?` · ${esc(s.group)} 배정`:''}${other?' (다른 그룹)':''}</small></span></label>`;}).join('')}</div>
-    ${pending?`<label class="opt"><input type="checkbox" id="toAccept" checked><span>참여 의사를 확인했으므로 상태를 <b>‘승낙’</b>으로 변경 (현재: ${esc(p['상태'])})</span></label>`:''}
-    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-close>취소</button><button class="btn primary" id="saveSl">저장</button></div></div>`);
-  $('#saveSl').onclick = async ()=>{
-    const chosen=[...$('#dlgBody').querySelectorAll('input[name=sl]:checked')].map(x=>x.value);
-    const fields={'가능시간':chosen.join(',')};
-    if($('#toAccept') && $('#toAccept').checked && chosen.length) fields['상태']='승낙';
-    $('#saveSl').disabled=true;
-    try{ await apiPost('admin_update',{pw:A.pw,id,fields}); Object.assign(p,fields); $('#dlg').close(); drawAdmin(); toast(`${p['성명']}님 가능 시간을 저장했습니다`); }
-    catch(e){ $('#saveSl').disabled=false; toast(e.message); }
-  };
-}
-
-/* ── 시간표 → 명단 선택: 한 시간에 올 수 있는 사람 고르기 ── */
-function openSlotPicker(slotId, g){
-  const s=A.slots.find(x=>x.id===slotId);
-  const ord={'확정':0,'승낙':1,'보류':2,'요청함':3,'후보':4};
-  const ps=A.people.filter(p=>p['그룹']===g && !['불참','취소'].includes(p['상태'])).sort((a,b)=>(ord[a['상태']]??9)-(ord[b['상태']]??9));
-  const assigned = s.group===g;
-  openDlg(`<div class="g-${esc(g)}"><div class="row"><h2 style="margin:0">${esc(slotLabel(s))}</h2><span class="tag gtag">${esc(g)}</span></div>
-    <p class="muted small">이 시간에 참석할 수 있는 분을 체크하세요. 체크를 풀면 그분의 가능 시간에서 이 시간이 빠집니다.${assigned?' <b>이 시간은 '+esc(g)+' 그룹에 배정되어 있습니다.</b>':''}</p>
-    ${ps.length?`<div class="picklist">${ps.map(p=>`<label><input type="checkbox" name="pp" value="${esc(p.ID)}" ${slotsOf(p).includes(slotId)?'checked':''}>
-      <span class="who"><b>${esc(p['성명'])}</b> <small>${esc(p['소속기관'])} ${esc(p['직위'])}</small><br><small>다른 가능 시간: ${slotsOf(p).filter(x=>x!==slotId).map(x=>{const t=A.slots.find(y=>y.id===x);return t?esc(slotLabel(t)):x;}).join(', ')||'없음'}</small></span>
-      <span class="st st-${esc(p['상태'])}">${esc(p['상태'])}</span></label>`).join('')}</div>
-      <label class="opt"><input type="checkbox" id="pkAccept" checked><span>체크한 분 중 ‘후보·요청함·보류’는 <b>‘승낙’</b>으로 변경</span></label>
-      ${assigned?`<label class="opt"><input type="checkbox" id="pkConfirm"><span>체크한 분을 이 시간으로 <b>‘확정’</b></span></label>`:''}`
-    :`<p class="empty">이 그룹에 등록된 분이 없습니다. 먼저 후보를 추가해 주세요.</p>`}
-    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-close>취소</button>${ps.length?'<button class="btn primary" id="savePk">저장</button>':''}</div></div>`);
-  if(!ps.length) return;
-  $('#savePk').onclick = async ()=>{
-    const on=new Set([...$('#dlgBody').querySelectorAll('input[name=pp]:checked')].map(x=>x.value));
-    const toAccept=$('#pkAccept').checked, toConfirm=$('#pkConfirm')&&$('#pkConfirm').checked;
-    const updates=[];
-    ps.forEach(p=>{
-      const cur=slotsOf(p), has=cur.includes(slotId), want=on.has(p.ID);
-      const fields={};
-      if(want && !has) fields['가능시간']=[...cur,slotId].sort().join(',');
-      if(!want && has) fields['가능시간']=cur.filter(x=>x!==slotId).join(',');
-      if(want && toConfirm && p['상태']!=='확정') fields['상태']='확정';
-      else if(want && toAccept && ['후보','요청함','보류'].includes(p['상태'])) fields['상태']='승낙';
-      if(Object.keys(fields).length) updates.push({id:p.ID,fields});
-    });
-    if(!updates.length){ $('#dlg').close(); return toast('바뀐 내용이 없습니다'); }
-    $('#savePk').disabled=true;
-    try{
-      await apiPost('admin_bulk',{pw:A.pw,updates});
-      updates.forEach(u=>Object.assign(A.people.find(x=>x.ID===u.id),u.fields));
-      $('#dlg').close(); drawAdmin(); toast(`${updates.length}명의 정보를 저장했습니다`);
-    }catch(e){ $('#savePk').disabled=false; toast(e.message); }
-  };
-}
-
 /* 대화상자 */
 dialog{border:none;border-radius:var(--r-lg);padding:0;max-width:560px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}
 dialog::backdrop{background:rgba(10,20,26,.5)}
@@ -244,6 +182,33 @@ details.notice .body h4{margin:14px 0 4px;font-size:14px}
 .toast.on{opacity:1}
 .login{max-width:360px;margin:12vh auto;padding:0 20px}
 @media (max-width:560px){.head > div:last-child{text-align:left!important}}
+/* 출력 */
+.pbar{position:sticky;top:0;z-index:15;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 20px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pbar label{font-size:13.5px;display:flex;gap:5px;align-items:center;cursor:pointer}
+.pbar input{accent-color:var(--ink)}
+.paper-wrap{padding:24px 12px 60px;overflow-x:auto}
+.paper{background:#fff;color:#111;width:210mm;max-width:100%;margin:0 auto 18px;padding:16mm 15mm;box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:10.5pt;line-height:1.5}
+.paper h1{font-size:16pt;text-align:center;margin:0 0 4px;letter-spacing:.02em}
+.paper .sub{text-align:center;color:#444;font-size:10pt;margin-bottom:14px}
+.paper h2{font-size:12pt;margin:18px 0 6px;padding-left:8px;border-left:4px solid #172E3B}
+.paper .meta{font-size:10pt;color:#333;margin:0 0 6px}
+.paper table{width:100%;border-collapse:collapse;margin:4px 0 8px;font-size:9.5pt}
+.paper th,.paper td{border:1px solid #888;padding:5px 6px;vertical-align:middle;text-align:center}
+.paper th{background:#EEF1F2;font-weight:700}
+.paper td.l{text-align:left}
+.paper .muted{color:#666}
+.paper .pend{color:#8a5a00}
+.paper .sign td{height:30px}
+.paper .foot{margin-top:10px;font-size:9pt;color:#555}
+.paper .sum td b{font-size:11pt}
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff}
+  #demobar,.pbar,.toast,.no-print{display:none!important}
+  .paper-wrap{padding:0}
+  .paper{box-shadow:none;margin:0;width:auto;min-height:auto;page-break-after:always;break-after:page}
+  .paper:last-child{page-break-after:auto;break-after:auto}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -535,6 +500,8 @@ function drawAdmin(){
     <div class="row" style="margin-top:16px">
       <button class="btn primary" id="addBtn">후보 추가</button>
       <button class="btn" id="linksBtn">공개 신청 링크</button>
+      <button class="btn" id="printBtn">일정표·명단 출력</button>
+      <button class="btn" id="csvBtn">엑셀(CSV) 받기</button>
       <span class="spacer"></span>
       <button class="btn ghost" id="refBtn">새로고침</button>
       ${DEMO?'':'<button class="btn ghost" id="outBtn">로그아웃</button>'}
@@ -596,6 +563,8 @@ function drawAdmin(){
 
   $('#addBtn').onclick = openAdd;
   $('#linksBtn').onclick = openLinks;
+  $('#printBtn').onclick = ()=>renderPrint();
+  $('#csvBtn').onclick = downloadCSV;
   $('#refBtn').onclick = ()=>loadAdmin(false).then(()=>toast('새로 불러왔습니다'));
   if($('#outBtn')) $('#outBtn').onclick = ()=>{ ss('fgi_pw',null); A.pw=null; clearInterval(A.timer); renderLogin(); };
   $('#fg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ A.filterG=b.dataset.g; drawAdmin(); });
@@ -677,6 +646,94 @@ async function confirmSlot(slotId, g){
     for(const p of list){ await apiPost('admin_update',{pw:A.pw,id:p.ID,fields:{'상태':'확정'}}); p['상태']='확정'; }
     $('#dlg').close(); drawAdmin(); toast(`${list.length}명을 확정했습니다`);
   };
+}
+
+/* ── 출력: 일정표 · 그룹별 명단 · 참석 서명부 ── */
+const P = { sched:true, roster:true, sign:true, phone:false, pending:true };
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`; }
+function renderPrint(){
+  clearInterval(A.timer);
+  const opt=(k,label)=>`<label><input type="checkbox" data-po="${k}" ${P[k]?'checked':''}>${label}</label>`;
+  app.innerHTML = `<div class="pbar no-print">
+      <button class="btn" id="pBack">← 현황판</button>
+      <b style="margin-right:6px">출력 항목</b>${opt('sched','일정표')}${opt('roster','그룹별 명단')}${opt('sign','참석 서명부')}
+      <span style="width:10px"></span>${opt('pending','미확정(승낙) 포함')}${opt('phone','연락처 포함')}
+      <span class="spacer"></span><button class="btn primary" id="pPrint">인쇄 / PDF 저장</button></div>
+    <div class="paper-wrap" id="paperWrap">${printDoc()}</div>`;
+  $('#pBack').onclick = ()=>{ drawAdmin(); loadAdmin(false); };
+  $('#pPrint').onclick = ()=>{ try{ window.print(); }catch(e){ toast('이 화면에서는 인쇄를 열 수 없습니다. 브라우저 메뉴의 인쇄를 이용해 주세요'); } };
+  app.querySelectorAll('[data-po]').forEach(c=>c.onchange=()=>{ P[c.dataset.po]=c.checked; $('#paperWrap').innerHTML=printDoc(); });
+  window.scrollTo(0,0);
+}
+function membersOf(g, slotId){
+  const ok = p => p['상태']==='확정' || (P.pending && p['상태']==='승낙' && (!slotId || slotsOf(p).includes(slotId)));
+  const ord={'확정':0,'승낙':1};
+  return A.people.filter(p=>p['그룹']===g && ok(p)).sort((a,b)=>ord[a['상태']]-ord[b['상태']] || String(a['성명']).localeCompare(b['성명'],'ko'));
+}
+const nm = p => `${esc(p['성명'])}${p['상태']==='확정'?'':' <span class="pend">(미확정)</span>'}`;
+const slotShort = id => { const t=A.slots.find(y=>y.id===id); return t? `${t.date.replace(/월 |일/g,m=>m==='월 '?'/':'')} ${t.time.slice(0,5)}` : id; };
+function printDoc(){
+  const pages=[];
+  const head = (title)=>`<h1>${title}</h1><div class="sub">사회복지현장 인공지능(AI) 윤리 가이드 개발 연구 · ${esc(CONFIG.ORG)} · 출력 ${todayStr()}</div>`;
+  if(P.sched){
+    const sumRows = GROUPS.map(g=>{ const st=groupStats(g); const slot=A.slots.find(s=>s.group===g);
+      return `<tr><td>${g}</td><td>${slot?`${esc(slot.date)} ${esc(slot.time)}`:'<span class="muted">미배정</span>'}</td><td>${slot?esc(slot.moderator):'-'}</td><td><b>${st.확정.length}</b></td><td>${st.승낙.length}</td><td>${st.요청함.length+st.보류.length+st.후보.length}</td><td>${st.불참.length}</td><td>${Math.max(0,CONFIG.TARGET-st.확정.length)}</td></tr>`; }).join('');
+    const slotRows = A.slots.map(s=>{
+      if(s.group){ const ms=membersOf(s.group, s.id);
+        return `<tr><td>${esc(s.date)}<br>${esc(s.time)}</td><td>${esc(s.group)}</td><td>${esc(s.moderator)}</td><td>${ms.length}명</td><td class="l">${ms.map(nm).join(', ')||'<span class="muted">-</span>'}</td></tr>`; }
+      const avail = GROUPS.map(g=>{ const n=A.people.filter(p=>p['그룹']===g && ['승낙','확정'].includes(p['상태']) && slotsOf(p).includes(s.id)).length; return n?`${g} ${n}명`:''; }).filter(Boolean).join(' · ');
+      return `<tr><td>${esc(s.date)}<br>${esc(s.time)}</td><td class="muted">미배정</td><td>${esc(s.moderator)}</td><td>-</td><td class="l muted">${avail?'가능 인원: '+avail:'가능 인원 없음'}</td></tr>`;
+    }).join('');
+    pages.push(`<section class="paper">${head('초점집단면접(FGI) 일정표')}
+      <h2>그룹별 모집 현황</h2>
+      <table class="sum"><thead><tr><th>그룹</th><th>면접 일시</th><th>진행</th><th>확정</th><th>승낙</th><th>응답 대기</th><th>불참</th><th>부족</th></tr></thead><tbody>${sumRows}</tbody></table>
+      <p class="meta">목표 그룹당 ${CONFIG.TARGET}명 · ‘부족’은 목표 대비 확정 인원이 모자란 수</p>
+      <h2>시간대별 일정</h2>
+      <table><colgroup><col style="width:17%"><col style="width:13%"><col style="width:16%"><col style="width:9%"><col></colgroup>
+        <thead><tr><th>일시</th><th>그룹</th><th>진행</th><th>인원</th><th>참석자</th></tr></thead><tbody>${slotRows}</tbody></table>
+      <p class="meta">장소: ${esc(CONFIG.PLACE)} · 소요 90~120분 · ${P.pending?'(미확정)은 승낙했으나 아직 확정 처리하지 않은 분':'확정자만 표시'}</p>
+    </section>`);
+  }
+  if(P.roster){
+    const blocks = GROUPS.map(g=>{
+      const slot=A.slots.find(s=>s.group===g); const ms=membersOf(g, slot?slot.id:null);
+      return `<h2>${g} 그룹 <span class="muted" style="font-weight:400;font-size:10pt">(${GROUP_DESC[g]})</span></h2>
+        <p class="meta">일시: ${slot?`${esc(slot.date)} ${esc(slot.time)}`:'미배정'} · 진행: ${slot?esc(slot.moderator):'-'} · 인원: ${ms.length}명</p>
+        <table><thead><tr><th style="width:6%">번호</th><th style="width:11%">성명</th><th>소속기관</th><th style="width:12%">직위</th><th style="width:10%">지역</th><th style="width:8%">규모</th>${P.phone?'<th style="width:15%">연락처</th>':''}<th style="width:9%">상태</th>${slot?'':'<th style="width:18%">가능 시간</th>'}</tr></thead>
+        <tbody>${ms.length? ms.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p['성명'])}</td><td class="l">${esc(p['소속기관'])}</td><td>${esc(p['직위'])}</td><td>${esc(p['근무지역'])}</td><td>${esc(p['시설규모'])}</td>${P.phone?`<td>${esc(p['연락처'])}</td>`:''}<td>${p['상태']==='확정'?'확정':'<span class="pend">미확정</span>'}</td>${slot?'':`<td class="l">${slotsOf(p).map(slotShort).join(', ')||'-'}</td>`}</tr>`).join('')
+          : `<tr><td colspan="9" class="muted">해당 인원이 없습니다</td></tr>`}</tbody></table>`;
+    }).join('');
+    pages.push(`<section class="paper">${head('초점집단면접(FGI) 그룹별 참여자 명단')}${blocks}
+      <p class="foot">※ 이 명단에는 개인정보가 포함되어 있습니다. 연구 목적 외 사용·배포를 금하며, 연구 종료 후 파기합니다.</p></section>`);
+  }
+  if(P.sign){
+    GROUPS.forEach(g=>{
+      const slot=A.slots.find(s=>s.group===g); const ms=membersOf(g, slot?slot.id:null);
+      const rows=[...ms]; while(rows.length<Math.max(CONFIG.TARGET+2, ms.length)) rows.push(null);
+      pages.push(`<section class="paper">${head(`초점집단면접(FGI) 참석 서명부`)}
+        <table style="margin-bottom:14px"><tbody>
+          <tr><th style="width:15%">그룹</th><td class="l" style="width:35%">${g}</td><th style="width:15%">진행</th><td class="l">${slot?esc(slot.moderator):''}</td></tr>
+          <tr><th>일시</th><td class="l">${slot?`2026년 ${esc(slot.date)} ${esc(slot.time)}`:''}</td><th>장소</th><td class="l">${esc(CONFIG.PLACE)}</td></tr>
+        </tbody></table>
+        <table class="sign"><thead><tr><th style="width:7%">번호</th><th style="width:14%">성명</th><th>소속기관</th><th style="width:12%">직위</th><th style="width:11%">동의서<br>제출</th><th style="width:16%">사례비 수령</th><th style="width:16%">서명</th></tr></thead>
+        <tbody>${rows.map((p,i)=>`<tr><td>${i+1}</td><td>${p?esc(p['성명']):''}</td><td class="l">${p?esc(p['소속기관']):''}</td><td>${p?esc(p['직위']):''}</td><td>□</td><td></td><td></td></tr>`).join('')}</tbody></table>
+        <p class="foot">※ 연구참여 동의서 2부(연구자 보관용·참여자 보관용) 서명 여부를 확인해 주세요.</p>
+      </section>`);
+    });
+  }
+  return pages.join('') || '<p class="empty">출력할 항목을 하나 이상 선택해 주세요.</p>';
+}
+function downloadCSV(){
+  const cols=['ID','그룹','성명','소속기관','직위','근무지역','시설규모','연락처','이메일','추천인','상태','가능시간','응답일시','생년월','성별','주요업무','현기관근무기간','사회복지경력','학력','자격증','동의_설명확인','동의_자발참여','동의_개인정보','동의_녹음','불참사유','메모'];
+  const cell=v=>{ v=String(v??''); return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; };
+  const rows=A.people.map(p=>cols.map(c=>c==='가능시간'?slotsOf(p).map(id=>{const t=A.slots.find(y=>y.id===id);return t?`${t.date} ${t.time}`:id;}).join(' / '):p[c]).map(cell).join(','));
+  const csv='\ufeff'+[cols.join(','),...rows].join('\r\n');
+  try{
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a=document.createElement('a'); const d=new Date();
+    a.href=url; a.download=`FGI_명단_${d.getMonth()+1}월${d.getDate()}일.csv`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000); toast('명단 파일을 내려받았습니다');
+  }catch(e){ toast('이 화면에서는 내려받기가 막혀 있습니다'); }
 }
 
 /* ── 명단 → 시간 배정: 한 사람의 가능 시간 입력 ── */
