@@ -125,7 +125,12 @@ table{border-collapse:collapse;width:100%}
 .list thead th{font-size:12.5px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap}
 .list select{border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface);font-size:13px}
 .slotchips span{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 3px 3px 0;white-space:nowrap}
-.acts{display:flex;gap:4px;flex-wrap:wrap}
+.acts{display:flex;gap:2px;flex-wrap:nowrap}
+.list td:nth-child(2){white-space:nowrap}
+.acts .btn.sm{padding:4px 7px}
+.btn{white-space:nowrap}
+.list td:nth-child(7){white-space:nowrap}
+.list td.slotchips{min-width:150px}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 
 /* 대화상자 */
@@ -576,6 +581,7 @@ function drawAdmin(){
   app.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>copyLink(b.dataset.link));
   app.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
   app.querySelectorAll('[data-slotedit]').forEach(b=>b.onclick=()=>openSlotEditor(b.dataset.slotedit));
+  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(b.dataset.edit));
   app.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openSlotPicker(b.dataset.pick,b.dataset.g));
 }
 
@@ -599,6 +605,7 @@ function drawList(){
     <td><div class="acts">
       <button class="btn sm" data-copy="${esc(p.ID)}">요청 문구</button>
       <button class="btn sm ghost" data-link="${esc(p.ID)}">링크</button>
+      <button class="btn sm ghost" data-edit="${esc(p.ID)}">수정</button>
       <button class="btn sm ghost" data-detail="${esc(p.ID)}">상세</button></div></td>
   </tr>`).join('')}</tbody></table>`;
 }
@@ -837,7 +844,50 @@ function openDetail(id){
   <p class="muted small">${esc(p.ID)} · ${esc(p['경로']||'')} · 동의 ${cons}/4</p>
   <dl class="dl">${rows.filter(([,k])=>p[k]).map(([l,k])=>`<dt>${l}</dt><dd>${esc(p[k])}</dd>`).join('')}</dl>
   <h3 style="margin-top:16px">요청 문구</h3><textarea class="i" rows="9" readonly>${esc(requestText(p))}</textarea>
-  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-close>닫기</button></div></div>`);
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-close>닫기</button><button class="btn primary" id="toEdit">정보 수정</button></div></div>`);
+  $('#toEdit').onclick = ()=>openEdit(id);
+}
+
+/* ── 입력 값 수정 ── */
+function openEdit(id){
+  const p=A.people.find(x=>x.ID===id);
+  const inp=(k,label,extra='')=>`<label class="f">${label}<input class="i" name="${k}" value="${esc(p[k])}" ${extra}></label>`;
+  const sel=(k,label,opts)=>`<label class="f">${label}<select class="i" name="${k}"><option value="">선택 안 함</option>${opts.map(o=>`<option ${p[k]===o?'selected':''}>${o}</option>`).join('')}${p[k]&&!opts.includes(p[k])?`<option selected>${esc(p[k])}</option>`:''}</select></label>`;
+  openDlg(`<div class="g-${esc(p['그룹'])}"><div class="row"><h2 style="margin:0">${esc(p['성명'])} 정보 수정</h2><span class="muted small">${esc(p.ID)}</span></div>
+  <form id="ef" class="form" style="margin-top:12px">
+    <label class="f"><span class="req">그룹</span><select class="i" name="그룹">${GROUPS.map(g=>`<option ${p['그룹']===g?'selected':''}>${g}</option>`).join('')}</select></label>
+    <label class="f"><span class="req">성명</span><input class="i" name="성명" value="${esc(p['성명'])}" required></label>
+    ${inp('소속기관','소속기관')}${inp('직위','직위')}
+    ${inp('근무지역','근무지역','placeholder="예: 노원구"')}${sel('시설규모','시설규모',['소규모','중규모','대규모'])}
+    ${inp('연락처','연락처','inputmode="tel" placeholder="010-0000-0000"')}${inp('이메일','이메일','type="email"')}
+    ${inp('추천인','추천인')}${inp('메모','메모')}
+    <details class="full" style="border-top:1px solid var(--soft);padding-top:10px" ${p['생년월']||p['주요업무']?'open':''}>
+      <summary style="cursor:pointer;font-weight:600;font-size:14px">참여자 기본사항 (응답 시 입력한 내용)</summary>
+      <div class="form" style="margin-top:12px">
+        ${inp('생년월','생년월','placeholder="예: 1985년 03월"')}${sel('성별','성별',['남','여'])}
+        <label class="f full">주요 업무<textarea class="i" name="주요업무">${esc(p['주요업무'])}</textarea></label>
+        ${inp('현기관근무기간','현 기관 근무기간','placeholder="예: 2019년 03월 ~ 현재"')}${inp('사회복지경력','사회복지 근무 경력','placeholder="예: 12년"')}
+        ${sel('학력','학력',['대학졸업','석사재학','석사졸업','박사재학','박사졸업'])}${inp('자격증','자격증')}
+        ${p['상태']==='불참'?`<label class="f full">불참 사유<input class="i" name="불참사유" value="${esc(p['불참사유'])}"></label>`:''}
+      </div>
+    </details>
+    <p class="err full" id="eerr" role="alert" style="margin:0"></p>
+    <div class="full row" style="justify-content:flex-end"><button type="button" class="btn" data-close>취소</button><button class="btn primary" id="esave">저장</button></div>
+  </form></div>`);
+  $('#ef').onsubmit = async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target); const fields={};
+    for(const [k,v] of fd.entries()){ const nv=String(v).trim(); if(nv!==String(p[k]??'').trim()) fields[k]=nv; }
+    if(!Object.keys(fields).length){ $('#dlg').close(); return toast('바뀐 내용이 없습니다'); }
+    if(fields['성명']==='' ){ $('#eerr').textContent='성명은 비워 둘 수 없습니다.'; return; }
+    if(fields['그룹'] && slotsOf(p).length){ const moved=A.slots.filter(s=>s.group && s.group!==fields['그룹'] && slotsOf(p).includes(s.id)); if(moved.length) toast('그룹을 바꿨습니다. 가능 시간이 새 그룹 일정과 맞는지 확인해 주세요'); }
+    $('#esave').disabled=true;
+    try{
+      await apiPost('admin_update',{pw:A.pw,id,fields});
+      Object.assign(p,fields); if(fields['연락처']) p['연락처']=fields['연락처'].replace(/[^0-9]/g,'').replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3');
+      $('#dlg').close(); drawAdmin(); toast(`${p['성명']}님 정보를 저장했습니다 (${Object.keys(fields).length}개 항목)`);
+    }catch(err){ $('#esave').disabled=false; $('#eerr').textContent=err.message; }
+  };
 }
 
 /* ════════════════════ 참여자 화면 ════════════════════ */
