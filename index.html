@@ -185,7 +185,7 @@ details.notice .body h4{margin:14px 0 4px;font-size:14px}
 const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbwavcqNLnh6LSfp3GNyPvwCfeFUhpRYxrkXT0D80PvfWlyaQaschRYNh6imXcNvMEau/exec',                       // 예: 'https://script.google.com/macros/s/XXXX/exec'
   CONTACT_NAME: '고석우 과장',
-  CONTACT_TEL: '010-9062-8804',
+  CONTACT_TEL: '02-786-2962',
   ORG: '서울특별시사회복지사협회',
   PLACE: '서울사회복지사협회',
   FIRST_DAY: '2026-10-06',
@@ -248,12 +248,29 @@ async function apiGet(params){
   if(DEMO) return demoApi(params.action, params);
   const q = new URLSearchParams(params).toString();
   const r = await fetch(`${CONFIG.API_URL}?${q}`);
-  const j = await r.json(); if(!j.ok) throw new Error(j.error||'요청 실패'); return j;
+  return parseRes(r);
 }
 async function apiPost(action, payload){
   if(DEMO) return demoApi(action, payload);
-  const r = await fetch(CONFIG.API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action}, payload)) });
-  const j = await r.json(); if(!j.ok) throw new Error(j.error||'요청 실패'); return j;
+  let r;
+  try{ r = await fetch(CONFIG.API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action}, payload)) }); }
+  catch(e){ throw new Error('서버에 연결하지 못했습니다. 인터넷 연결이나 API_URL 주소를 확인해 주세요.'); }
+  return parseRes(r);
+}
+/* 응답이 JSON이 아니면(구글 로그인·오류 페이지) 원인을 알려 줌 */
+async function parseRes(r){
+  const text = await r.text();
+  let j;
+  try{ j = JSON.parse(text); }
+  catch(e){
+    if(/accounts\.google\.com|ServiceLogin|로그인/i.test(text))
+      throw new Error('웹 앱 접근 권한이 막혀 있습니다. 배포 설정에서 액세스 권한을 ‘모든 사용자’로 바꾼 뒤 새 버전으로 다시 배포해 주세요.');
+    if(/Script function not found|doPost|doGet/i.test(text))
+      throw new Error('Apps Script에 doGet·doPost 함수가 없습니다. Code.gs를 붙여넣고 새 버전으로 다시 배포해 주세요.');
+    throw new Error('서버가 JSON 대신 웹페이지를 돌려주었습니다. API_URL이 …/exec로 끝나는지, 최신 버전으로 배포했는지 확인해 주세요.');
+  }
+  if(!j.ok) throw new Error(j.error||'요청 실패');
+  return j;
 }
 
 /* ── 데모 데이터 (미리보기 전용) ── */
@@ -350,10 +367,10 @@ function renderLogin(msg){
   app.innerHTML = `<div class="login"><h1>FGI 모집 현황판</h1><p class="muted">연구진 전용 화면입니다. 관리자 비밀번호를 입력해 주세요.</p>
     <form id="lf" class="card" style="margin-top:16px"><label class="f">비밀번호<input class="i" type="password" id="pw" autocomplete="current-password" required></label>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}<button class="btn primary" style="margin-top:12px;width:100%;justify-content:center">현황판 열기</button></form></div>`;
-  $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; loadAdmin(true); };
+  $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; const b=e.target.querySelector('button'); b.disabled=true; b.textContent='확인 중… (처음엔 5초 정도 걸려요)'; loadAdmin(true); };
 }
 async function loadAdmin(first){
-  if(first) app.innerHTML = `<div class="wrap"><p class="muted">불러오는 중…</p></div>`;
+  if(first && !$('#lf')) app.innerHTML = `<div class="wrap"><p class="muted">불러오는 중…</p></div>`;
   try{
     const j = await apiPost('admin_list',{pw:A.pw});
     ss('fgi_pw',A.pw); A.people=j.people; A.slots=j.slots; A.synced=new Date();
