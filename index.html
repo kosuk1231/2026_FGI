@@ -267,7 +267,9 @@ async function parseRes(r){
       throw new Error('웹 앱 접근 권한이 막혀 있습니다. 배포 설정에서 액세스 권한을 ‘모든 사용자’로 바꾼 뒤 새 버전으로 다시 배포해 주세요.');
     if(/Script function not found|doPost|doGet/i.test(text))
       throw new Error('Apps Script에 doGet·doPost 함수가 없습니다. Code.gs를 붙여넣고 새 버전으로 다시 배포해 주세요.');
-    throw new Error('서버가 JSON 대신 웹페이지를 돌려주었습니다. API_URL이 …/exec로 끝나는지, 최신 버전으로 배포했는지 확인해 주세요.');
+    const title=(text.match(/<title>([^<]*)<\/title>/i)||[])[1]||'';
+    const body=text.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,160);
+    throw new Error(`서버가 JSON 대신 웹페이지를 돌려주었습니다. [HTTP ${r.status}] ${title} / ${body}`);
   }
   if(!j.ok) throw new Error(j.error||'요청 실패');
   return j;
@@ -367,6 +369,14 @@ function renderLogin(msg){
   app.innerHTML = `<div class="login"><h1>FGI 모집 현황판</h1><p class="muted">연구진 전용 화면입니다. 관리자 비밀번호를 입력해 주세요.</p>
     <form id="lf" class="card" style="margin-top:16px"><label class="f">비밀번호<input class="i" type="password" id="pw" autocomplete="current-password" required></label>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}<button class="btn primary" style="margin-top:12px;width:100%;justify-content:center">현황판 열기</button></form></div>`;
+  if(!DEMO){ fetch(`${CONFIG.API_URL}?action=ping`).catch(()=>{}); } // 비밀번호 입력하는 동안 서버 미리 깨우기
+  $('#lf').insertAdjacentHTML('afterend','<p class="small" style="text-align:center;margin-top:10px"><button class="btn sm ghost" id="diag">연결 테스트</button></p><pre id="diagOut" class="small" style="white-space:pre-wrap;word-break:break-all;color:var(--muted)"></pre>');
+  $('#diag').onclick = async ()=>{
+    const out=$('#diagOut'); out.textContent='테스트 중…'; const t0=performance.now();
+    try{ const r=await fetch(`${CONFIG.API_URL}?action=ping`); const tx=await r.text();
+      out.textContent=`GET 응답 ${r.status}, ${Math.round(performance.now()-t0)}ms\n${tx.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,300)}`;
+    }catch(e){ out.textContent='연결 실패(CORS 또는 주소 오류): '+e.message; }
+  };
   $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; const b=e.target.querySelector('button'); b.disabled=true; b.textContent='확인 중… (처음엔 5초 정도 걸려요)'; loadAdmin(true); };
 }
 async function loadAdmin(first){
