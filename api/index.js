@@ -207,11 +207,15 @@ async function adminAdd(c) {
   log('후보등록', id, c.name);
   return { ok: true, id, token: tk };
 }
-const EDITABLE = ['그룹', '성명', '소속기관', '직위', '근무지역', '시설규모', '연락처', '이메일', '추천인', '메모', '상태', '가능시간'];
+const EDITABLE = ['그룹', '성명', '소속기관', '직위', '근무지역', '시설규모', '연락처', '이메일', '추천인', '메모', '상태', '가능시간',
+  '생년월', '성별', '주요업무', '현기관근무기간', '사회복지경력', '학력', '자격증', '불참사유'];
 function buildUpdate(p, fields = {}) {
   const f = {};
   Object.keys(fields).forEach(k => { if (EDITABLE.includes(k)) f[k] = fields[k]; });
   if (f['상태'] && !STATUSES.includes(f['상태'])) throw new Error('상태 값이 올바르지 않습니다.');
+  if (f['그룹'] !== undefined && !GROUPS.includes(f['그룹'])) throw new Error('그룹 값이 올바르지 않습니다.');
+  if (f['성명'] !== undefined && !String(f['성명']).trim()) throw new Error('성명은 비워 둘 수 없습니다.');
+  Object.keys(f).forEach(k => { if (typeof f[k] === 'string') f[k] = f[k].trim().slice(0, 500); });
   if (f['상태'] === '요청함' && !p['요청일시']) f['요청일시'] = now();
   if (f['연락처']) f['연락처'] = normPhone(f['연락처']);
   if (f['가능시간'] !== undefined) {
