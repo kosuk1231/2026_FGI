@@ -100,9 +100,12 @@ async function readSlots() {
 const cleanSlots = s => s.map(({ _row, ...rest }) => rest);
 const cleanPerson = ({ _row, ...rest }) => rest;
 
-async function writeFields(head, row, fields) {
-  const data = Object.keys(fields).filter(k => head.indexOf(k) >= 0 && fields[k] !== undefined)
+function fieldData(head, row, fields) {
+  return Object.keys(fields).filter(k => head.indexOf(k) >= 0 && fields[k] !== undefined)
     .map(k => ({ range: `'${SH_PEOPLE}'!${colLetter(head.indexOf(k) + 1)}${row}`, values: [[String(fields[k])]] }));
+}
+async function writeFields(head, row, fields) {
+  const data = fieldData(head, row, fields);
   if (data.length) await gs('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
 }
 async function appendRow(name, values) {
@@ -204,20 +207,43 @@ async function adminAdd(c) {
   log('후보등록', id, c.name);
   return { ok: true, id, token: tk };
 }
+const EDITABLE = ['그룹', '성명', '소속기관', '직위', '근무지역', '시설규모', '연락처', '이메일', '추천인', '메모', '상태', '가능시간'];
+function buildUpdate(p, fields = {}) {
+  const f = {};
+  Object.keys(fields).forEach(k => { if (EDITABLE.includes(k)) f[k] = fields[k]; });
+  if (f['상태'] && !STATUSES.includes(f['상태'])) throw new Error('상태 값이 올바르지 않습니다.');
+  if (f['상태'] === '요청함' && !p['요청일시']) f['요청일시'] = now();
+  if (f['연락처']) f['연락처'] = normPhone(f['연락처']);
+  if (f['가능시간'] !== undefined) {
+    const v = Array.isArray(f['가능시간']) ? f['가능시간'] : String(f['가능시간']).split(',');
+    f['가능시간'] = v.map(x => String(x).trim()).filter(x => /^[A-Za-z0-9_-]+$/.test(x)).join(',');
+  }
+  f['수정일시'] = now();
+  return f;
+}
 async function adminUpdate(id, fields = {}) {
   const { head, list } = await readPeople();
   const p = list.find(x => x['ID'] === id);
   if (!p) throw new Error('대상을 찾을 수 없습니다.');
-  const allowed = ['그룹', '성명', '소속기관', '직위', '근무지역', '시설규모', '연락처', '이메일', '추천인', '메모', '상태'];
-  const f = {};
-  Object.keys(fields).forEach(k => { if (allowed.includes(k)) f[k] = fields[k]; });
-  if (f['상태'] && !STATUSES.includes(f['상태'])) throw new Error('상태 값이 올바르지 않습니다.');
-  if (f['상태'] === '요청함' && !p['요청일시']) f['요청일시'] = now();
-  if (f['연락처']) f['연락처'] = normPhone(f['연락처']);
-  f['수정일시'] = now();
+  const f = buildUpdate(p, fields);
   await writeFields(head, p._row, f);
   log('수정', id, JSON.stringify(f));
   return { ok: true };
+}
+// 여러 명을 한 번에 수정 (시간표에서 명단 선택 등)
+async function adminBulk(updates = []) {
+  if (!Array.isArray(updates) || !updates.length) return { ok: true, count: 0 };
+  if (updates.length > 100) throw new Error('한 번에 100명까지 수정할 수 있습니다.');
+  const { head, list } = await readPeople();
+  const data = [];
+  updates.forEach(u => {
+    const p = list.find(x => x['ID'] === u.id);
+    if (!p) throw new Error(`대상을 찾을 수 없습니다: ${u.id}`);
+    data.push(...fieldData(head, p._row, buildUpdate(p, u.fields)));
+  });
+  if (data.length) await gs('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
+  log('일괄수정', updates.map(u => u.id).join(','), JSON.stringify(updates.map(u => u.fields)));
+  return { ok: true, count: updates.length };
 }
 async function adminAssign(slotId, group) {
   const slots = await readSlots();
@@ -257,6 +283,7 @@ module.exports = async (req, res) => {
         case 'admin_add': auth(b); out = await adminAdd(b.candidate); break;
         case 'admin_update': auth(b); out = await adminUpdate(b.id, b.fields); break;
         case 'admin_assign': auth(b); out = await adminAssign(b.slotId, b.group); break;
+        case 'admin_bulk': auth(b); out = await adminBulk(b.updates); break;
         default: throw new Error('알 수 없는 요청입니다.');
       }
     } else { res.status(405).json({ ok: false, error: '허용되지 않는 방식입니다.' }); return; }
