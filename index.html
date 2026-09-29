@@ -181,9 +181,9 @@ details.notice .body h4{margin:14px 0 4px;font-size:14px}
 
 <script>
 /* ════════════════════ 설정 ════════════════════
-   API_URL 이 비어 있으면 데모 모드(가상 데이터, 저장 안 됨)로 동작합니다. */
+   API_URL: 같은 Vercel 프로젝트의 서버 함수 주소('/api'). 비우면 데모 모드(가상 데이터)로 동작합니다. */
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwVkwerPP184U57Yc8HQ__ZrCtyVyAHu66dQGh7rR0A3FMcz1gD0YAXiGYXPTve7McIvA/exec',                       // 예: 'https://script.google.com/macros/s/XXXX/exec'
+  API_URL: '/api',
   CONTACT_NAME: '고석우 과장',
   CONTACT_TEL: '02-786-2962',
   ORG: '서울특별시사회복지사협회',
@@ -235,7 +235,14 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200); }
 function ss(k,v){ try{ if(v===undefined) return sessionStorage.getItem(k); if(v===null) sessionStorage.removeItem(k); else sessionStorage.setItem(k,v);}catch(e){ return null; } }
 const slotsOf = p => String(p['가능시간']||'').split(',').filter(Boolean);
-const fmtDT = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return String(iso); return `${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const fmtDT = iso => {
+  if(!iso) return '';
+  const s=String(iso);
+  const m=s.match(/^\d{4}-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if(m && !/Z$|[+-]\d{2}:?\d{2}$/.test(s)) return `${+m[1]}.${+m[2]} ${m[3]}:${m[4]}`; // 시트의 한국시간 문자열
+  const d=new Date(s); if(isNaN(d)) return s;
+  return `${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
 async function copyText(text){
   try{ await navigator.clipboard.writeText(text); return true; }
   catch(e){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); let ok=false; try{ok=document.execCommand('copy');}catch(_){} ta.remove(); return ok; }
@@ -260,6 +267,7 @@ async function apiPost(action, payload){
 /* 응답이 JSON이 아니면(구글 로그인·오류 페이지) 원인을 알려 줌 */
 async function parseRes(r){
   const text = await r.text();
+  if(r.status===404 && /NOT_FOUND|could not be found/i.test(text)) throw new Error('서버 함수(/api)를 찾을 수 없습니다. api/index.js와 package.json이 함께 배포됐는지 확인해 주세요.');
   let j;
   try{ j = JSON.parse(text); }
   catch(e){
@@ -377,7 +385,7 @@ function renderLogin(msg){
       out.textContent=`GET 응답 ${r.status}, ${Math.round(performance.now()-t0)}ms\n${tx.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,300)}`;
     }catch(e){ out.textContent='연결 실패(CORS 또는 주소 오류): '+e.message; }
   };
-  $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; const b=e.target.querySelector('button'); b.disabled=true; b.textContent='확인 중… (처음엔 5초 정도 걸려요)'; loadAdmin(true); };
+  $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; const b=e.target.querySelector('button'); b.disabled=true; b.textContent='확인 중…'; loadAdmin(true); };
 }
 async function loadAdmin(first){
   if(first && !$('#lf')) app.innerHTML = `<div class="wrap"><p class="muted">불러오는 중…</p></div>`;
