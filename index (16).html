@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 윤리 가이드 연구 FGI 모집</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --ink:#172E3B; --muted:#5B6D77; --line:#D3DBDE; --soft:#E7ECEC;
+  --top:#7A4E8C; --top-t:#EFE6F3;
+  --mid:#2B7881; --mid-t:#E0F0F1;
+  --prac:#B3742A; --prac-t:#F7EBDB;
+  --ok:#2E7D4F; --no:#A6423A; --warn:#9A6B12;
+  --r-lg:14px; --r-sm:8px;
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10191F; --surface:#18242B; --ink:#E4ECEF; --muted:#9AAAB2; --line:#2D3C44; --soft:#1F2E36;
+    --top:#B98BCB; --top-t:#2E2335; --mid:#63B7BF; --mid-t:#17333A; --prac:#DDA35C; --prac-t:#3A2C1A;
+    --ok:#6CC08E; --no:#E0877F; --warn:#E0B55A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10191F; --surface:#18242B; --ink:#E4ECEF; --muted:#9AAAB2; --line:#2D3C44; --soft:#1F2E36;
+  --top:#B98BCB; --top-t:#2E2335; --mid:#63B7BF; --mid-t:#17333A; --prac:#DDA35C; --prac-t:#3A2C1A;
+  --ok:#6CC08E; --no:#E0877F; --warn:#E0B55A;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--mid);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px}
+.narrow{max-width:720px}
+h1{font-size:26px;line-height:1.3;margin:0 0 6px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:18px;margin:0 0 14px;font-weight:700}
+h3{font-size:15px;margin:0 0 8px;font-weight:600}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:var(--r-sm);cursor:pointer;font-weight:500;font-size:14px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.ghost{border-color:transparent;background:transparent}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px}
+.section{margin-top:28px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.g-최고관리자{--g:var(--top);--gt:var(--top-t)}
+.g-중간관리자{--g:var(--mid);--gt:var(--mid-t)}
+.g-실무자{--g:var(--prac);--gt:var(--prac-t)}
+.gtag{background:var(--gt);color:var(--g)}
+.st{font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+.st-확정{background:var(--ok);color:#fff;border-color:var(--ok)}
+.st-승낙{color:var(--ok);border-color:var(--ok)}
+.st-요청함{color:var(--warn);border-color:var(--warn);border-style:dashed}
+.st-보류{color:var(--warn);border-color:var(--warn)}
+.st-불참,.st-취소{color:var(--no);border-color:var(--no)}
+.st-후보{color:var(--muted)}
+
+/* 데모 전환 바 */
+.demobar{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--surface);padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.demobar button{background:transparent;border:1px solid rgba(255,255,255,.35);color:inherit;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
+.demobar button.on{background:var(--surface);color:var(--ink)}
+
+/* 관리자 헤더 */
+.head{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:16px}
+.dday{font-size:40px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.sync{font-size:12px;color:var(--muted)}
+
+/* 원탁 */
+.tables{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:900px){.tables{grid-template-columns:1fr}}
+.tbl{border-top:4px solid var(--g)}
+.tbl-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tbl-body{display:flex;gap:18px;align-items:center;margin-top:10px}
+.tbl svg{flex:none;width:150px;height:150px}
+.counts{display:grid;grid-template-columns:auto auto;gap:2px 12px;font-size:14px}
+.counts b{font-variant-numeric:tabular-nums;text-align:right}
+.balance{margin-top:12px;border-top:1px solid var(--soft);padding-top:10px;font-size:12.5px;color:var(--muted)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:0 8px;margin:2px 2px 0 0;font-size:12px;color:var(--ink)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px}
+
+/* 일정 매트릭스 */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%}
+.matrix th,.matrix td{border-bottom:1px solid var(--soft);padding:10px 12px;text-align:left;vertical-align:middle}
+.matrix thead th{font-size:13px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+.matrix td.cell{text-align:center;min-width:150px}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin:4px auto 6px;max-width:110px}
+.bar span{display:block;height:100%;background:var(--g)}
+.num{font-weight:700;font-variant-numeric:tabular-nums}
+.assigned{background:var(--gt)}
+.assigned .num{color:var(--g)}
+.pin{font-size:12px;font-weight:700;color:var(--g)}
+
+/* 명단 */
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:13px}
+.filters button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.list th,.list td{padding:10px 8px;border-bottom:1px solid var(--soft);text-align:left;vertical-align:top;font-size:14px}
+.list thead th{font-size:12.5px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap}
+.list select{border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface);font-size:13px}
+.slotchips span{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 3px 3px 0;white-space:nowrap}
+.acts{display:flex;gap:4px;flex-wrap:wrap}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+/* 대화상자 */
+dialog{border:none;border-radius:var(--r-lg);padding:0;max-width:560px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(10,20,26,.5)}
+.dlg{padding:22px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+@media (max-width:560px){.form{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+label.f span.req::after{content:" *";color:var(--no)}
+input.i,select.i,textarea.i{border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 10px;background:var(--surface);font-weight:400;font-size:15px;width:100%}
+textarea.i{min-height:72px;resize:vertical}
+.hint{font-weight:400;color:var(--muted);font-size:12px}
+.dl{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:14px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0}
+
+/* 참여자 화면 */
+.hero{padding:28px 0 20px;border-bottom:1px solid var(--line)}
+.hero .kicker{font-size:13px;color:var(--muted);margin-bottom:10px}
+.hero h1{font-size:28px}
+.facts{display:grid;grid-template-columns:90px 1fr;gap:6px 14px;margin-top:18px;font-size:15px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0}
+.topics{counter-reset:t;list-style:none;padding:0;margin:0}
+.topics li{counter-increment:t;padding:12px 0 12px 40px;border-bottom:1px solid var(--soft);position:relative}
+.topics li::before{content:counter(t);position:absolute;left:0;top:12px;width:26px;height:26px;border-radius:50%;background:var(--gt);color:var(--g);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.topics li b{display:block}
+.topics li span{color:var(--muted);font-size:14px}
+details.notice{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+details.notice summary{padding:14px 18px;cursor:pointer;font-weight:600}
+details.notice .body{padding:0 18px 18px;font-size:14px;line-height:1.75}
+details.notice .body h4{margin:14px 0 4px;font-size:14px}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice button{padding:16px;border:1.5px solid var(--line);background:var(--surface);border-radius:var(--r-lg);cursor:pointer;text-align:left}
+.choice button b{display:block;font-size:16px}
+.choice button span{font-size:13px;color:var(--muted)}
+.choice button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.slot{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:12px;cursor:pointer;background:var(--surface)}
+.slot input{margin-top:4px;accent-color:var(--ink);width:17px;height:17px}
+.slot b{display:block;font-size:15px}
+.slot small{color:var(--muted)}
+.slot:has(input:checked){border-color:var(--ink);background:var(--soft)}
+.consent label{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--soft);font-size:14.5px;cursor:pointer}
+.consent input{margin-top:4px;width:17px;height:17px;accent-color:var(--ink);flex:none}
+.consent .all{font-weight:700;border-bottom:1.5px solid var(--line)}
+.err{color:var(--no);font-size:14px;margin-top:10px}
+.done{text-align:center;padding:60px 10px}
+.done .mark{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.done.no .mark{background:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.login{max-width:360px;margin:12vh auto;padding:0 20px}
+@media (max-width:560px){.head > div:last-child{text-align:left!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="demobar"></div>
+<main id="app"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+/* ════════════════════ 설정 ════════════════════
+   API_URL 이 비어 있으면 데모 모드(가상 데이터, 저장 안 됨)로 동작합니다. */
+const CONFIG = {
+  API_URL: '',                       // 예: 'https://script.google.com/macros/s/XXXX/exec'
+  CONTACT_NAME: '고석우 과장',
+  CONTACT_TEL: '02-786-2962',
+  ORG: '서울특별시사회복지사협회',
+  PLACE: '서울사회복지사협회',
+  FIRST_DAY: '2026-10-06',
+  TARGET: 5,
+  REFRESH_SEC: 60
+};
+const DEMO = !CONFIG.API_URL;
+
+const GROUPS = ['최고관리자','중간관리자','실무자'];
+const GROUP_DESC = {
+  '최고관리자':'기관장·시설장·본부장',
+  '중간관리자':'팀장·파트장·슈퍼바이저',
+  '실무자':'직접 서비스를 담당하는 사회복지사'
+};
+const STATUSES = ['후보','요청함','승낙','보류','불참','확정','취소'];
+const TOPICS = {
+  '최고관리자':[
+    ['AI, 얼마나 알고 계세요?','AI 기술과 사회복지 분야 활용에 대한 이해, 기관장으로서 꼭 알아야 할 점'],
+    ['우리 기관은 AI를 어떻게 쓰고 있나요?','행정·기록·상담·교육 등 활용 영역과 앞으로 3~5년의 확대 방향'],
+    ['AI, 도움이 될까요? 위험할까요?','기관 운영에서 AI가 주는 가장 큰 도움과 가장 큰 걱정'],
+    ['마음에 걸리는 점은 없으세요?','개인정보·비밀보장·사고 시 책임 등 윤리·법적 책임 문제'],
+    ['AI 사용 규칙, 있으면 좋을까요?','기관 내 지침 현황과 AI 윤리 가이드에 꼭 들어가야 할 내용'],
+    ['교육은 어떻게 하면 좋을까요?','받아본 교육과 앞으로 필요한 교육의 주체·방식·강조점']
+  ],
+  '중간관리자':[
+    ['AI, 얼마나 알고 계세요?','스스로의 이해·활용 수준, 슈퍼비전 과정에서 AI 이해가 필요했던 순간'],
+    ['우리 팀은 AI를 어떻게 쓰고 있나요?','팀에서 쓰는 도구와 업무, 팀원들의 사용을 파악·관리하는 방식'],
+    ['AI, 도움이 될까요? 위험할까요?','팀 업무에서 도움이 된 영역과 부담이 된 영역, 결과물 검토 방식'],
+    ['마음에 걸리는 점은 없으세요?','지도·감독 과정의 윤리적 딜레마와 실제 에피소드'],
+    ['AI 사용 규칙, 있으면 좋을까요?','기관 내 지침 현황과 AI 윤리 가이드에 꼭 들어가야 할 내용'],
+    ['교육은 어떻게 하면 좋을까요?','필요한 교육과 교육 외 조직 차원의 지원']
+  ],
+  '실무자':[
+    ['AI, 얼마나 알고 계세요?','스스로의 이해·활용 수준, 업무에 필요한데 아직 잘 모르겠는 부분'],
+    ['AI를 어떻게 쓰고 계세요?','사용 계기, 주로 쓰는 도구와 업무, 사용 시간, 적절한 사용 수준'],
+    ['AI, 도움이 될까요? 위험할까요?','실제로 도움이 된 경험과 일이 늘거나 믿기 어려웠던 경험'],
+    ['마음에 걸리는 점은 없으세요?','클라이언트 정보 입력, 사용 사실 알리기, AI 답을 믿어도 될지'],
+    ['AI 사용 규칙, 있으면 좋을까요?','기관 내 지침 현황과 AI 윤리 가이드에 꼭 들어가야 할 내용'],
+    ['교육은 어떻게 하면 좋을까요?','받아본 교육과 앞으로 필요한 교육, 교육 외 필요한 지원']
+  ]
+};
+
+/* ════════════════════ 공통 유틸 ════════════════════ */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200); }
+function ss(k,v){ try{ if(v===undefined) return sessionStorage.getItem(k); if(v===null) sessionStorage.removeItem(k); else sessionStorage.setItem(k,v);}catch(e){ return null; } }
+const slotsOf = p => String(p['가능시간']||'').split(',').filter(Boolean);
+const fmtDT = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return String(iso); return `${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); let ok=false; try{ok=document.execCommand('copy');}catch(_){} ta.remove(); return ok; }
+}
+function inviteLink(token){ return `${location.origin}${location.pathname}?t=${encodeURIComponent(token)}`; }
+function applyLink(group){ return `${location.origin}${location.pathname}?apply=${encodeURIComponent(group)}`; }
+
+/* ════════════════════ API (실서버 / 데모) ════════════════════ */
+async function apiGet(params){
+  if(DEMO) return demoApi(params.action, params);
+  const q = new URLSearchParams(params).toString();
+  const r = await fetch(`${CONFIG.API_URL}?${q}`);
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'요청 실패'); return j;
+}
+async function apiPost(action, payload){
+  if(DEMO) return demoApi(action, payload);
+  const r = await fetch(CONFIG.API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action}, payload)) });
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'요청 실패'); return j;
+}
+
+/* ── 데모 데이터 (미리보기 전용) ── */
+const DEMO_DB = {
+  slots:[
+    {id:'S1',date:'10월 6일(화)',time:'10:00~12:00',moderator:'김아래미(조소연)',group:'',note:''},
+    {id:'S2',date:'10월 6일(화)',time:'14:00~16:00',moderator:'조소연',group:'',note:''},
+    {id:'S3',date:'10월 6일(화)',time:'16:00~18:00',moderator:'조소연',group:'실무자',note:''},
+    {id:'S4',date:'10월 7일(수)',time:'13:00~15:00',moderator:'김아래미',group:'',note:'1~3시로 변경'}
+  ],
+  people:[]
+};
+(function seed(){
+  const rows = [
+    ['최고관리자','김OO','OO종합사회복지관','관장','노원구','대규모','확정','S1,S4'],
+    ['최고관리자','박OO','OO노인복지관','관장','마포구','중규모','승낙','S1,S2,S4'],
+    ['최고관리자','이OO','OO장애인복지관','관장','강서구','대규모','승낙','S4'],
+    ['최고관리자','정OO','OO지역아동센터','센터장','은평구','소규모','요청함',''],
+    ['최고관리자','최OO','OO재단','본부장','중구','대규모','불참',''],
+    ['중간관리자','한OO','OO종합사회복지관','사례관리팀장','관악구','대규모','승낙','S2'],
+    ['중간관리자','오OO','OO노인복지관','기획팀장','송파구','중규모','승낙','S2,S4'],
+    ['중간관리자','윤OO','OO정신재활시설','팀장','성북구','소규모','보류','S4'],
+    ['중간관리자','서OO','OO청소년수련관','파트장','동작구','중규모','후보',''],
+    ['실무자','강OO','OO종합사회복지관','사회복지사','강남구','대규모','확정','S3'],
+    ['실무자','조OO','OO노인복지관','사회복지사','도봉구','중규모','확정','S2,S3'],
+    ['실무자','임OO','OO지역아동센터','사회복지사','구로구','소규모','승낙','S3'],
+    ['실무자','신OO','OO장애인복지관','사회복지사','양천구','대규모','요청함',''],
+    ['실무자','유OO','OO가족센터','사회복지사','영등포구','중규모','요청함','']
+  ];
+  rows.forEach((r,i)=>{
+    const id='P'+String(i+1).padStart(3,'0');
+    DEMO_DB.people.push({ID:id,'토큰':'demo'+id,'그룹':r[0],'성명':r[1],'소속기관':r[2],'직위':r[3],'근무지역':r[4],'시설규모':r[5],
+      '연락처':'010-0000-00'+String(i).padStart(2,'0'),'이메일':'','추천인':i%3?'김아래미':'조소연','메모':'','상태':r[6],'경로':'초대',
+      '등록일시':'2026-09-29T09:00:00','요청일시':r[6]!=='후보'?'2026-09-29T10:00:00':'','응답일시':['승낙','확정','불참','보류'].includes(r[6])?'2026-09-29T14:20:00':'',
+      '가능시간':r[7],'불참사유':r[6]==='불참'?'해당 주간 해외 출장':'',
+      '생년월':'','성별':'','주요업무':'','현기관근무기간':'','사회복지경력':'','학력':'','자격증':'',
+      '동의_설명확인':r[7]?'Y':'','동의_자발참여':r[7]?'Y':'','동의_개인정보':r[7]?'Y':'','동의_녹음':r[7]?'Y':''});
+  });
+})();
+async function demoApi(action, b){
+  await new Promise(r=>setTimeout(r,150));
+  const db=DEMO_DB, find=(k,v)=>db.people.find(p=>String(p[k])===String(v));
+  if(action==='invite'){ const p=find('토큰',b.t); if(!p) throw new Error('초대 정보를 찾을 수 없습니다.');
+    return {ok:true,invite:{name:p['성명'],group:p['그룹'],org:p['소속기관'],position:p['직위'],region:p['근무지역'],status:p['상태'],slots:slotsOf(p),responded:!!p['응답일시']},slots:db.slots}; }
+  if(action==='slots') return {ok:true,slots:db.slots};
+  if(action==='admin_list'){ if(b.pw!=='fgi2026') throw new Error('관리자 비밀번호가 올바르지 않습니다.'); return {ok:true,people:JSON.parse(JSON.stringify(db.people)),slots:JSON.parse(JSON.stringify(db.slots)),serverTime:new Date().toISOString()}; }
+  if(action==='admin_add'){ const c=b.candidate; const n=db.people.length+1; const id='P'+String(n).padStart(3,'0');
+    db.people.push({ID:id,'토큰':'demo'+id,'그룹':c.group,'성명':c.name,'소속기관':c.org||'','직위':c.position||'','근무지역':c.region||'','시설규모':c.size||'','연락처':c.phone||'','이메일':c.email||'','추천인':c.recommender||'','메모':c.memo||'','상태':'후보','경로':'초대','등록일시':new Date().toISOString(),'가능시간':''});
+    return {ok:true,id,token:'demo'+id}; }
+  if(action==='admin_update'){ const p=find('ID',b.id); Object.assign(p,b.fields); if(b.fields['상태']==='요청함'&&!p['요청일시']) p['요청일시']=new Date().toISOString(); return {ok:true}; }
+  if(action==='admin_assign'){ db.slots.forEach(s=>{ if(b.group&&s.group===b.group&&s.id!==b.slotId) s.group=''; if(s.id===b.slotId) s.group=b.group||''; }); return {ok:true,slots:db.slots}; }
+  if(action==='respond'){ const p=find('토큰',b.t);
+    if(b.decision==='accept'){ Object.assign(p,{'상태':p['상태']==='확정'?'확정':'승낙','가능시간':b.slots.join(','),'응답일시':new Date().toISOString()}); }
+    else Object.assign(p,{'상태':'불참','불참사유':b.reason||'','응답일시':new Date().toISOString()});
+    return {ok:true,status:p['상태']}; }
+  if(action==='apply'){ const n=db.people.length+1; const id='P'+String(n).padStart(3,'0');
+    db.people.push({ID:id,'토큰':'demo'+id,'그룹':b.group,'성명':b.name,'소속기관':b.org||'','직위':b.position||'','근무지역':b.region||'','시설규모':b.size||'','연락처':b.phone,'상태':'승낙','경로':'공개신청','가능시간':b.slots.join(','),'응답일시':new Date().toISOString()});
+    return {ok:true}; }
+  throw new Error('알 수 없는 요청');
+}
+
+/* ════════════════════ 라우팅 ════════════════════ */
+const params = new URLSearchParams(location.search);
+let demoView = 'admin';
+
+function route(){
+  if(DEMO) renderDemoBar();
+  if(params.get('t')) return renderInvite(params.get('t'));
+  if(params.get('apply')) return renderApply(params.get('apply'));
+  if(DEMO){
+    if(demoView==='invite') return renderInvite('demoP004');
+    if(demoView==='apply') return renderApply('중간관리자');
+  }
+  return renderAdmin();
+}
+function renderDemoBar(){
+  if(params.get('t')||params.get('apply')) return;
+  $('#demobar').innerHTML = `<div class="demobar"><strong>미리보기</strong><span style="opacity:.75">가상 데이터로 동작하며 저장되지 않습니다</span><span class="spacer"></span>
+    <button data-v="admin" class="${demoView==='admin'?'on':''}">관리자 현황판</button>
+    <button data-v="invite" class="${demoView==='invite'?'on':''}">초대받은 분 화면</button>
+    <button data-v="apply" class="${demoView==='apply'?'on':''}">공개 신청 화면</button></div>`;
+  $('#demobar').querySelectorAll('button').forEach(b=>b.onclick=()=>{ demoView=b.dataset.v; window.scrollTo(0,0); route(); });
+}
+
+/* ════════════════════ 관리자 현황판 ════════════════════ */
+const A = { pw:null, people:[], slots:[], filterG:'전체', filterS:'전체', synced:null, timer:null };
+
+function renderAdmin(){
+  A.pw = A.pw || ss('fgi_pw') || (DEMO ? 'fgi2026' : null);
+  if(!A.pw) return renderLogin();
+  loadAdmin(true);
+}
+function renderLogin(msg){
+  app.innerHTML = `<div class="login"><h1>FGI 모집 현황판</h1><p class="muted">연구진 전용 화면입니다. 관리자 비밀번호를 입력해 주세요.</p>
+    <form id="lf" class="card" style="margin-top:16px"><label class="f">비밀번호<input class="i" type="password" id="pw" autocomplete="current-password" required></label>
+    ${msg?`<p class="err">${esc(msg)}</p>`:''}<button class="btn primary" style="margin-top:12px;width:100%;justify-content:center">현황판 열기</button></form></div>`;
+  $('#lf').onsubmit = e => { e.preventDefault(); A.pw=$('#pw').value; loadAdmin(true); };
+}
+async function loadAdmin(first){
+  if(first) app.innerHTML = `<div class="wrap"><p class="muted">불러오는 중…</p></div>`;
+  try{
+    const j = await apiPost('admin_list',{pw:A.pw});
+    ss('fgi_pw',A.pw); A.people=j.people; A.slots=j.slots; A.synced=new Date();
+    drawAdmin();
+    clearInterval(A.timer); A.timer=setInterval(()=>{ if(document.visibilityState==='visible' && !$('#dlg').open) loadAdmin(false); }, CONFIG.REFRESH_SEC*1000);
+  }catch(err){ ss('fgi_pw',null); A.pw=null; renderLogin(err.message); }
+}
+
+function groupStats(g){
+  const ps = A.people.filter(p=>p['그룹']===g);
+  const by = s => ps.filter(p=>p['상태']===s);
+  return { all:ps, 확정:by('확정'), 승낙:by('승낙'), 보류:by('보류'), 요청함:by('요청함'), 후보:by('후보'), 불참:by('불참').concat(by('취소')) };
+}
+
+function seatSVG(g, st){
+  const order = [...st.확정.map(()=> 'c'), ...st.승낙.map(()=> 'a'), ...st.보류.map(()=> 'h'), ...st.요청함.map(()=> 'r')];
+  const seats = order.slice(0, CONFIG.TARGET);
+  while(seats.length < CONFIG.TARGET) seats.push('e');
+  const cx=75, cy=75, R=56;
+  const yes = st.확정.length + st.승낙.length;
+  let s = `<svg viewBox="0 0 150 150" role="img" aria-label="${g} 그룹 좌석: 확정 ${st.확정.length}명, 승낙 ${st.승낙.length}명, 목표 ${CONFIG.TARGET}명">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="34" fill="var(--gt)" stroke="var(--g)" stroke-opacity=".35"/>`;
+  s += `<text x="${cx}" y="${cy+2}" text-anchor="middle" font-size="24" font-weight="700" fill="var(--g)" font-family="inherit">${yes}</text>`;
+  s += `<text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="inherit">/ ${CONFIG.TARGET}명</text>`;
+  seats.forEach((k,i)=>{
+    const a = (-90 + i*360/CONFIG.TARGET) * Math.PI/180;
+    const x = cx + R*Math.cos(a), y = cy + R*Math.sin(a);
+    const style = {
+      c:`fill="var(--g)" stroke="var(--g)" stroke-width="2"`,
+      a:`fill="var(--gt)" stroke="var(--g)" stroke-width="2.5"`,
+      h:`fill="var(--surface)" stroke="var(--warn)" stroke-width="2"`,
+      r:`fill="var(--surface)" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 3"`,
+      e:`fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"`
+    }[k];
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" ${style}/>`;
+    if(k==='c') s += `<path d="M${(x-5).toFixed(1)} ${y.toFixed(1)} l3.5 3.5 l6-7" fill="none" stroke="var(--surface)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  return s + `</svg>`;
+}
+
+function tally(list, key){
+  const m={}; list.forEach(p=>{ const v=p[key]||'미기재'; m[v]=(m[v]||0)+1; });
+  return Object.entries(m).map(([k,v])=>`<span class="chip">${esc(k)} ${v}</span>`).join('') || '<span class="muted">아직 없음</span>';
+}
+
+function dday(){
+  const t = new Date(CONFIG.FIRST_DAY+'T00:00:00'); const n=new Date(); n.setHours(0,0,0,0);
+  const d = Math.round((t-n)/86400000);
+  return d>0 ? `D-${d}` : d===0 ? 'D-DAY' : '진행 중';
+}
+
+function drawAdmin(){
+  const totalYes = A.people.filter(p=>['승낙','확정'].includes(p['상태'])).length;
+  const pending = A.people.filter(p=>p['상태']==='요청함').length;
+  app.innerHTML = `<div class="wrap">
+    <header class="head">
+      <div style="flex:1;min-width:260px">
+        <p class="muted small" style="margin:0 0 4px">사회복지현장 인공지능(AI) 윤리 가이드 개발 연구</p>
+        <h1>초점집단면접 모집 현황</h1>
+        <p class="muted small" style="margin:0">면접 10월 6일(화)~7일(수), ${esc(CONFIG.PLACE)}. 그룹당 ${CONFIG.TARGET}명, 총 ${CONFIG.TARGET*3}명 목표</p>
+      </div>
+      <div style="text-align:right">
+        <div class="dday">${dday()}</div>
+        <div class="sync">참여 ${totalYes}명 / 응답 대기 ${pending}명<br>마지막 갱신 ${fmtDT(A.synced.toISOString())}</div>
+      </div>
+    </header>
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn primary" id="addBtn">후보 추가</button>
+      <button class="btn" id="linksBtn">공개 신청 링크</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="refBtn">새로고침</button>
+      ${DEMO?'':'<button class="btn ghost" id="outBtn">로그아웃</button>'}
+    </div>
+
+    <section class="section">
+      <div class="tables">${GROUPS.map(g=>{
+        const st=groupStats(g); const extra=Math.max(0, st.확정.length+st.승낙.length+st.보류.length+st.요청함.length-CONFIG.TARGET);
+        const confirmed=[...st.확정,...st.승낙];
+        const slot=A.slots.find(s=>s.group===g);
+        return `<article class="card tbl g-${g}">
+          <div class="tbl-top"><div><h2 style="margin:0">${g}</h2><div class="muted small">${GROUP_DESC[g]}</div></div>
+            <span class="tag gtag">${slot?`${esc(slot.date)} ${esc(slot.time)}`:'일정 미배정'}</span></div>
+          <div class="tbl-body">${seatSVG(g,st)}
+            <div class="counts">
+              <span>확정</span><b>${st.확정.length}</b><span>승낙</span><b>${st.승낙.length}</b>
+              <span>보류</span><b>${st.보류.length}</b><span>응답 대기</span><b>${st.요청함.length}</b>
+              <span>요청 전 후보</span><b>${st.후보.length}</b><span>불참</span><b>${st.불참.length}</b>
+              ${extra?`<span class="muted">예비</span><b class="muted">+${extra}</b>`:''}
+            </div></div>
+          <div class="balance"><div>지역 ${tally(confirmed,'근무지역')}</div><div style="margin-top:4px">시설규모 ${tally(confirmed,'시설규모')}</div></div>
+        </article>`;}).join('')}</div>
+      <div class="legend"><span><i style="background:var(--ink)"></i>확정</span><span><i style="border:2.5px solid var(--ink);background:var(--soft)"></i>승낙</span><span><i style="border:2px solid var(--warn)"></i>보류</span><span><i style="border:1.5px dashed var(--muted)"></i>응답 대기</span><span><i style="border:1.5px solid var(--line)"></i>빈자리</span></div>
+    </section>
+
+    <section class="section card">
+      <div class="row" style="margin-bottom:6px"><h2 style="margin:0">면접 시간 맞추기</h2></div>
+      <p class="muted small">칸의 숫자는 승낙·확정한 분 중 그 시간에 참석 가능한 인원입니다. 그룹마다 한 시간을 배정하면, 배정된 시간에 가능한 분을 한 번에 확정할 수 있습니다.</p>
+      <div class="scroll"><table class="matrix"><thead><tr><th>일시</th><th>진행</th>${GROUPS.map(g=>`<th style="text-align:center">${g}</th>`).join('')}</tr></thead><tbody>
+      ${A.slots.map(s=>`<tr><td><b>${esc(s.date)}</b><br><span class="small">${esc(s.time)}</span>${s.note?`<br><span class="small" style="color:var(--no)">${esc(s.note)}</span>`:''}</td>
+        <td class="small">${esc(s.moderator)}</td>
+        ${GROUPS.map(g=>{
+          const yes=A.people.filter(p=>p['그룹']===g && ['승낙','확정'].includes(p['상태']));
+          const can=yes.filter(p=>slotsOf(p).includes(s.id));
+          const on=s.group===g; const taken=s.group && !on;
+          const pct = yes.length? Math.round(can.length/yes.length*100):0;
+          const toConfirm = can.filter(p=>p['상태']==='승낙').length;
+          return `<td class="cell g-${g} ${on?'assigned':''}">
+            <span class="num">${can.length}</span><span class="muted small"> / ${yes.length}명</span>
+            <div class="bar"><span style="width:${pct}%"></span></div>
+            ${on?`<div class="pin">배정됨</div>
+                 <div class="row" style="justify-content:center;gap:4px;margin-top:4px">
+                   ${toConfirm?`<button class="btn sm" data-confirm="${s.id}" data-g="${g}">가능자 ${toConfirm}명 확정</button>`:''}
+                   <button class="btn sm ghost" data-assign="${s.id}" data-g="">해제</button></div>`
+               :`<button class="btn sm" data-assign="${s.id}" data-g="${g}" ${taken?`title="${esc(s.group)} 그룹에 배정된 시간입니다"`:''}>${taken?'여기로 변경':'이 시간 배정'}</button>`}
+          </td>`;}).join('')}
+      </tr>`).join('')}
+      </tbody></table></div>
+    </section>
+
+    <section class="section card">
+      <div class="row" style="margin-bottom:12px"><h2 style="margin:0">명단</h2><span class="spacer"></span>
+        <div class="filters" id="fg">${['전체',...GROUPS].map(g=>`<button data-g="${g}" class="${A.filterG===g?'on':''}">${g}</button>`).join('')}</div>
+        <select class="i" id="fs" style="width:auto;padding:5px 8px;font-size:13px">${['전체',...STATUSES].map(s=>`<option ${A.filterS===s?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+      <div class="scroll">${drawList()}</div>
+    </section>
+  </div>`;
+
+  $('#addBtn').onclick = openAdd;
+  $('#linksBtn').onclick = openLinks;
+  $('#refBtn').onclick = ()=>loadAdmin(false).then(()=>toast('새로 불러왔습니다'));
+  if($('#outBtn')) $('#outBtn').onclick = ()=>{ ss('fgi_pw',null); A.pw=null; clearInterval(A.timer); renderLogin(); };
+  $('#fg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ A.filterG=b.dataset.g; drawAdmin(); });
+  $('#fs').onchange = e=>{ A.filterS=e.target.value; drawAdmin(); };
+  app.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>assignSlot(b.dataset.assign,b.dataset.g));
+  app.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>confirmSlot(b.dataset.confirm,b.dataset.g));
+  app.querySelectorAll('select[data-status]').forEach(sel=>sel.onchange=()=>updatePerson(sel.dataset.status,{'상태':sel.value}));
+  app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyRequest(b.dataset.copy));
+  app.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>copyLink(b.dataset.link));
+  app.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
+}
+
+function drawList(){
+  const ord = {'확정':0,'승낙':1,'보류':2,'요청함':3,'후보':4,'불참':5,'취소':6};
+  const list = A.people
+    .filter(p=>A.filterG==='전체'||p['그룹']===A.filterG)
+    .filter(p=>A.filterS==='전체'||p['상태']===A.filterS)
+    .sort((a,b)=>GROUPS.indexOf(a['그룹'])-GROUPS.indexOf(b['그룹']) || (ord[a['상태']]??9)-(ord[b['상태']]??9));
+  if(!list.length) return `<div class="empty">조건에 맞는 분이 없습니다. <b>후보 추가</b>로 모집할 분을 등록해 보세요.</div>`;
+  const slotName = id => { const s=A.slots.find(x=>x.id===id); return s? `${s.date.replace(/월 |일/g,m=>m==='월 '?'/':'')} ${s.time.slice(0,5)}` : id; };
+  return `<table class="list"><thead><tr><th>그룹</th><th>성명</th><th>소속·직위</th><th>지역·규모</th><th>상태</th><th>가능 시간</th><th>응답</th><th>동작</th></tr></thead><tbody>
+  ${list.map(p=>`<tr class="g-${esc(p['그룹'])}">
+    <td><span class="tag gtag">${esc(p['그룹'])}</span></td>
+    <td><b>${esc(p['성명'])}</b>${p['경로']==='공개신청'?'<br><span class="small muted">공개 신청</span>':''}</td>
+    <td>${esc(p['소속기관'])}<br><span class="small muted">${esc(p['직위'])}</span></td>
+    <td class="small">${esc(p['근무지역']||'-')}<br><span class="muted">${esc(p['시설규모']||'')}</span></td>
+    <td><select data-status="${esc(p.ID)}" aria-label="${esc(p['성명'])} 상태">${STATUSES.map(s=>`<option ${p['상태']===s?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td class="slotchips">${slotsOf(p).map(id=>`<span>${esc(slotName(id))}</span>`).join('')||'<span class="muted small" style="border:0">-</span>'}</td>
+    <td class="small muted">${p['응답일시']?fmtDT(p['응답일시']):p['요청일시']?'요청 '+fmtDT(p['요청일시']):'-'}</td>
+    <td><div class="acts">
+      <button class="btn sm" data-copy="${esc(p.ID)}">요청 문구</button>
+      <button class="btn sm ghost" data-link="${esc(p.ID)}">링크</button>
+      <button class="btn sm ghost" data-detail="${esc(p.ID)}">상세</button></div></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function requestText(p){
+  return `[${CONFIG.ORG}] 안녕하세요, ${p['성명']}님.
+「사회복지현장 인공지능(AI) 윤리 가이드 개발 연구」의 ${p['그룹']} 그룹 초점집단면접(FGI)에 참여를 요청드립니다.
+
+○ 일시: 10월 6일(화)~7일(수) 중 1회, 90~120분
+○ 장소: ${CONFIG.PLACE}
+○ 방식: 같은 직급 5명이 함께 나누는 집단 면담(동의 하에 음성 녹음)
+○ 사례비: 소정의 사례비 지급
+
+아래 링크에서 연구 안내를 확인하시고, 참여 여부와 가능한 시간을 알려 주세요.
+${inviteLink(p['토큰'])}
+
+문의: ${CONFIG.CONTACT_NAME} ${CONFIG.CONTACT_TEL}`;
+}
+
+async function copyRequest(id){
+  const p=A.people.find(x=>x.ID===id);
+  const ok = await copyText(requestText(p));
+  if(!ok) return toast('복사하지 못했습니다. 상세에서 직접 선택해 주세요');
+  if(p['상태']==='후보'){ await updatePerson(id,{'상태':'요청함'},true); toast('요청 문구를 복사했고, 상태를 요청함으로 바꿨습니다'); }
+  else toast('요청 문구를 복사했습니다');
+}
+async function copyLink(id){
+  const p=A.people.find(x=>x.ID===id);
+  toast(await copyText(inviteLink(p['토큰']))?'응답 링크를 복사했습니다':'복사하지 못했습니다');
+}
+async function updatePerson(id, fields, silent){
+  try{ await apiPost('admin_update',{pw:A.pw,id,fields}); Object.assign(A.people.find(x=>x.ID===id),fields); if(!silent) toast('저장했습니다'); drawAdmin(); }
+  catch(e){ toast(e.message); loadAdmin(false); }
+}
+async function assignSlot(slotId, g){
+  try{ const j=await apiPost('admin_assign',{pw:A.pw,slotId,group:g}); A.slots=j.slots; drawAdmin(); toast(g?`${g} 그룹 시간을 배정했습니다`:'배정을 해제했습니다'); }
+  catch(e){ toast(e.message); }
+}
+async function confirmSlot(slotId, g){
+  const list=A.people.filter(p=>p['그룹']===g && p['상태']==='승낙' && slotsOf(p).includes(slotId));
+  openDlg(`<h2>${g} 그룹 확정</h2><p>이 시간에 참석 가능한 ${list.length}명(${list.map(p=>esc(p['성명'])).join(', ')})을 확정할까요?</p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-close>취소</button><button class="btn primary" id="okc">확정하기</button></div>`);
+  $('#okc').onclick = async ()=>{
+    $('#okc').disabled=true;
+    for(const p of list){ await apiPost('admin_update',{pw:A.pw,id:p.ID,fields:{'상태':'확정'}}); p['상태']='확정'; }
+    $('#dlg').close(); drawAdmin(); toast(`${list.length}명을 확정했습니다`);
+  };
+}
+
+/* 대화상자 */
+function openDlg(html){ $('#dlgBody').innerHTML=html; $('#dlg').showModal(); $('#dlgBody').querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$('#dlg').close()); }
+
+function openAdd(){
+  openDlg(`<h2>후보 추가</h2><p class="muted small">등록하면 이 분만 쓸 수 있는 응답 링크가 만들어집니다.</p>
+  <form id="af" class="form">
+    <label class="f"><span class="req">그룹</span><select class="i" name="group" required>${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></label>
+    <label class="f"><span class="req">성명</span><input class="i" name="name" required></label>
+    <label class="f">소속기관<input class="i" name="org"></label>
+    <label class="f">직위<input class="i" name="position" placeholder="관장, 팀장, 사회복지사 등"></label>
+    <label class="f">근무지역<input class="i" name="region" placeholder="예: 노원구"></label>
+    <label class="f">시설규모<select class="i" name="size"><option value="">선택</option><option>소규모</option><option>중규모</option><option>대규모</option></select></label>
+    <label class="f">연락처<input class="i" name="phone" inputmode="tel" placeholder="010-0000-0000"></label>
+    <label class="f">이메일<input class="i" name="email" type="email"></label>
+    <label class="f">추천인<input class="i" name="recommender" placeholder="섭외하신 연구진"></label>
+    <label class="f">메모<input class="i" name="memo"></label>
+    <div class="full row" style="justify-content:flex-end;margin-top:6px"><button type="button" class="btn" data-close>취소</button><button class="btn primary">등록하기</button></div>
+  </form>`);
+  if(A.filterG!=='전체') $('#af').group.value=A.filterG;
+  $('#af').onsubmit = async e=>{
+    e.preventDefault(); const c=Object.fromEntries(new FormData(e.target));
+    try{ await apiPost('admin_add',{pw:A.pw,candidate:c}); $('#dlg').close(); toast(`${c.name}님을 등록했습니다`); loadAdmin(false); }
+    catch(err){ toast(err.message); }
+  };
+}
+function openLinks(){
+  openDlg(`<h2>공개 신청 링크</h2><p class="muted small">단체 대화방 등에 공유할 때 쓰는 링크입니다. 이 링크로 신청한 분은 바로 ‘승낙’으로 등록됩니다. 개별 요청은 명단의 ‘요청 문구’를 쓰세요.</p>
+  ${GROUPS.map(g=>`<div class="row g-${g}" style="padding:10px 0;border-bottom:1px solid var(--soft)"><span class="tag gtag">${g}</span><code class="small" style="flex:1;word-break:break-all">${esc(applyLink(g))}</code><button class="btn sm" data-al="${g}">복사</button></div>`).join('')}
+  <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" data-close>닫기</button></div>`);
+  $('#dlgBody').querySelectorAll('[data-al]').forEach(b=>b.onclick=async()=>toast(await copyText(applyLink(b.dataset.al))?'복사했습니다':'복사하지 못했습니다'));
+}
+function openDetail(id){
+  const p=A.people.find(x=>x.ID===id);
+  const rows=[['그룹','그룹'],['소속기관','소속기관'],['직위','직위'],['근무지역','근무지역'],['시설규모','시설규모'],['연락처','연락처'],['이메일','이메일'],['추천인','추천인'],['생년월','생년월'],['성별','성별'],['주요 업무','주요업무'],['현 기관 근무','현기관근무기간'],['사회복지 경력','사회복지경력'],['학력','학력'],['자격증','자격증'],['불참 사유','불참사유'],['메모','메모']];
+  const cons=['동의_설명확인','동의_자발참여','동의_개인정보','동의_녹음'].map(k=>p[k]==='Y').filter(Boolean).length;
+  openDlg(`<div class="g-${esc(p['그룹'])}"><div class="row"><h2 style="margin:0">${esc(p['성명'])}</h2><span class="st st-${esc(p['상태'])}">${esc(p['상태'])}</span></div>
+  <p class="muted small">${esc(p.ID)} · ${esc(p['경로']||'')} · 동의 ${cons}/4</p>
+  <dl class="dl">${rows.filter(([,k])=>p[k]).map(([l,k])=>`<dt>${l}</dt><dd>${esc(p[k])}</dd>`).join('')}</dl>
+  <h3 style="margin-top:16px">요청 문구</h3><textarea class="i" rows="9" readonly>${esc(requestText(p))}</textarea>
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-close>닫기</button></div></div>`);
+}
+
+/* ════════════════════ 참여자 화면 ════════════════════ */
+const NOTICE = `
+<h4>1. 연구 배경 및 목적</h4><p>최근 사회복지현장에서 인공지능(AI) 기술의 활용이 빠르게 확산되고 있으나, 그 활용을 뒷받침할 윤리적 기준과 실천 지침은 충분히 마련되어 있지 않은 실정입니다. 본 연구는 사회복지사의 AI 활용 실태와 윤리적 인식, 현장에서 겪는 어려움을 심층적으로 파악하여, 사회복지현장에 적합한 ‘AI 실천윤리 가이드’를 개발하기 위한 기초자료를 수집하는 데 목적이 있습니다.</p>
+<h4>2. 연구 참여 대상 및 인원</h4><p>사회복지현장에서 근무 중인 사회복지사를 직급별로 구분하여, 최고관리자·중간관리자·실무자 3개 그룹으로 각 5명씩, 총 15명 내외를 모집합니다.</p>
+<h4>3. 연구 방법 및 절차</h4><p>동일 직급의 참여자 5명이 한 그룹을 이루어 진행자와 함께 집단 면담(FGI)을 진행합니다. 면담은 사전에 준비된 반구조화 질문지를 바탕으로 AI 이해와 활용, 윤리적 문제의식, 교육 및 가이드에 관한 의견을 자유롭게 나누는 방식으로 이루어집니다. 면담은 1회, 약 90~120분 소요되며, 정확한 기록과 분석을 위해 참여자의 동의를 받아 음성 녹음(필요시 영상 녹화)하고 별도의 현장 기록을 병행합니다.</p>
+<h4>4. 예상되는 위험 및 불편</h4><p>신체적 위험은 없습니다. 다만 시간 소요, 집단 상황에서 의견을 말하는 데 따르는 심리적 부담이 있을 수 있습니다. 답변하기 곤란한 질문에는 답하지 않으실 수 있으며, 언제든지 휴식을 요청하거나 참여를 중단하실 수 있습니다.</p>
+<h4>5. 예상되는 이익</h4><p>직접적인 이익은 없을 수 있으나, 귀하의 경험과 의견은 사회복지현장에 실질적으로 도움이 되는 AI 실천윤리 가이드 개발의 중요한 기초가 됩니다.</p>
+<h4>6. 참여에 따른 보상</h4><p>면담에 참여하신 분께는 소정의 사례비를 지급합니다. 지급에 필요한 최소한의 정보(성명, 연락처, 지급 관련 정보)는 관련 법령에 따라 처리·보관되며, 연구 목적 외에는 사용되지 않습니다.</p>
+<h4>7. 개인정보 보호 및 비밀보장</h4><p>수집된 자료는 연구 목적으로만 사용됩니다. 분석 자료의 성명·소속 기관명 등 식별정보는 익명 처리(예: 참여자 A, B …)되며, 결과 보고 시 개인이나 기관이 식별되지 않도록 합니다. 자료는 접근이 제한된 곳에 보관하며 연구책임자와 지정된 연구원만 접근할 수 있습니다. 집단 면담의 특성상 같은 그룹 참여자에게 공유된 내용은 완전한 비밀 보장이 어려우므로, 면담 중 알게 된 내용을 외부에 발설하지 않을 것을 요청드립니다.</p>
+<h4>8. 자료의 보관 및 폐기</h4><p>연구 종료 후 2년간 보관한 뒤 복구가 불가능한 방법으로 폐기합니다(전자파일 영구 삭제, 출력물 파쇄).</p>
+<h4>9. 연구 결과의 활용</h4><p>AI 실천윤리 가이드 개발, 연구보고서, 학술논문 발표, 교육자료 제작 등에 활용될 수 있으며, 개인 식별이 불가능한 형태로만 제시됩니다.</p>
+<h4>10. 자발적 참여 및 중도 철회</h4><p>참여는 전적으로 자발적이며, 거부하셔도 어떠한 불이익도 없습니다. 동의 후에도 언제든 이유를 밝히지 않고 중단하실 수 있으며, 이 경우 자료는 분석에서 제외·폐기됩니다(이미 익명 처리되어 분리·분석된 자료는 철회가 어려울 수 있습니다).</p>
+<h4>11. 문의처</h4><p>${esc(CONFIG.ORG)} ${esc(CONFIG.CONTACT_NAME)} ${esc(CONFIG.CONTACT_TEL)}</p>`;
+
+const CONSENTS = [
+  ['c1','본 연구에 대한 설명문을 읽었으며, 연구의 목적과 방법에 대해 충분히 설명을 들었습니다.'],
+  ['c2','나의 연구 참여가 자발적인 것이며, 언제든지 불이익 없이 참여를 중단할 수 있음을 이해합니다.'],
+  ['c3','면담 내용이 익명으로 처리되고 연구 목적으로만 사용되며, 관련 규정에 따라 보관·폐기됨을 이해하고, 수집된 개인정보의 처리 및 이용에 동의합니다.'],
+  ['c4','정확한 기록을 위해 면담 내용이 음성 녹음되는 것에 동의합니다.']
+];
+
+async function renderInvite(token){
+  app.innerHTML = `<div class="wrap narrow"><p class="muted">초대 정보를 불러오는 중…</p></div>`;
+  try{
+    const j = await apiGet({action:'invite', t:token});
+    drawParticipant({mode:'invite', token, inv:j.invite, slots:j.slots.filter(s=>!s.group || s.group===j.invite.group)});
+  }catch(e){
+    app.innerHTML = `<div class="wrap narrow"><div class="done no"><div class="mark">!</div><h1>${esc(e.message)}</h1><p class="muted">문의: ${esc(CONFIG.CONTACT_NAME)} ${esc(CONFIG.CONTACT_TEL)}</p></div></div>`;
+  }
+}
+async function renderApply(group){
+  if(!GROUPS.includes(group)) group = '실무자';
+  let slots=[];
+  try{ slots=(await apiGet({action:'slots'})).slots.filter(s=>!s.group || s.group===group); }catch(e){}
+  drawParticipant({mode:'apply', inv:{group, name:''}, slots});
+}
+
+function drawParticipant(ctx){
+  const {mode, inv, slots} = ctx; const g = inv.group;
+  const state = { decision: mode==='apply' ? 'accept' : null };
+  const greet = mode==='invite' ? `${esc(inv.name)}님, 연구 참여를 요청드립니다` : `${esc(g)} 그룹 연구 참여자를 모십니다`;
+  app.innerHTML = `<div class="wrap narrow g-${esc(g)}">
+    <header class="hero">
+      <div class="kicker">${esc(CONFIG.ORG)} 정책위원회 연구</div>
+      <span class="tag gtag">${esc(g)} 그룹 · ${esc(GROUP_DESC[g])}</span>
+      <h1 style="margin-top:12px">${greet}</h1>
+      <p class="muted">「사회복지현장 인공지능(AI) 윤리 가이드 개발 연구」를 위한 초점집단면접(FGI)입니다. 현장에서 AI를 쓰며 겪은 경험과 생각을 같은 직급의 동료들과 편하게 나눠 주세요.</p>
+      <dl class="facts"><dt>일시</dt><dd>10월 6일(화)~7일(수) 중 그룹별 1회, 90~120분</dd>
+        <dt>장소</dt><dd>${esc(CONFIG.PLACE)}</dd><dt>방식</dt><dd>같은 직급 5명의 집단 면담, 동의 하에 음성 녹음</dd>
+        <dt>사례비</dt><dd>소정의 사례비 지급</dd></dl>
+    </header>
+
+    ${mode==='invite' && inv.responded ? `<p class="card small" style="margin-top:20px">이미 응답해 주셨습니다(현재 상태: <b>${esc(inv.status)}</b>). 내용을 바꾸시려면 아래에서 다시 보내 주세요.</p>`:''}
+
+    <section class="section"><h2>이런 이야기를 나눕니다</h2>
+      <ol class="topics">${TOPICS[g].map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ol>
+      <p class="small muted" style="margin-top:8px">여기서 ‘AI’는 챗GPT 같은 대화형 도구, 자동 분류·예측 프로그램, 기록·상담·행정을 돕는 여러 인공지능 도구를 폭넓게 말합니다. 특정 기관을 평가하려는 것이 아닙니다.</p>
+    </section>
+
+    <section class="section"><details class="notice"><summary>연구참여 안내문 전문 보기</summary><div class="body">${NOTICE}</div></details></section>
+
+    <form id="pf" novalidate>
+      ${mode==='invite' ? `<section class="section"><h2>참여하실 수 있나요?</h2>
+        <div class="choice"><button type="button" data-d="accept" aria-pressed="false"><b>참여하겠습니다</b><span>가능한 시간과 기본사항을 적어 주세요</span></button>
+        <button type="button" data-d="decline" aria-pressed="false"><b>이번에는 어렵습니다</b><span>알려 주셔서 감사합니다</span></button></div></section>`:''}
+
+      <div id="acceptPart" ${mode==='invite'?'hidden':''}>
+        <section class="section"><h2>참석 가능한 시간을 모두 골라 주세요</h2>
+          <p class="muted small">그룹 5명이 가장 많이 모일 수 있는 시간으로 정해 개별 안내드립니다.</p>
+          <div class="slots">${slots.map(s=>`<label class="slot"><input type="checkbox" name="slot" value="${esc(s.id)}" ${inv.slots&&inv.slots.includes(s.id)?'checked':''}><span><b>${esc(s.date)}</b><small>${esc(s.time)}</small></span></label>`).join('')}</div>
+        </section>
+
+        <section class="section"><h2>기본사항</h2>
+          <div class="form">
+            ${mode==='apply'?`<label class="f"><span class="req">성명</span><input class="i" name="name" required></label>
+              <label class="f"><span class="req">연락처</span><input class="i" name="phone" inputmode="tel" placeholder="010-0000-0000" required></label>
+              <label class="f full">이메일<input class="i" name="email" type="email"></label>`:''}
+            <label class="f"><span class="req">소속기관</span><input class="i" name="org" value="${esc(inv.org||'')}" required></label>
+            <label class="f"><span class="req">직급(직위)</span><input class="i" name="position" value="${esc(inv.position||'')}" required></label>
+            <label class="f"><span class="req">근무지역</span><input class="i" name="region" value="${esc(inv.region||'')}" placeholder="예: 노원구" required></label>
+            ${mode==='apply'?`<label class="f"><span class="req">시설규모</span><select class="i" name="size" required><option value="">선택</option><option>소규모</option><option>중규모</option><option>대규모</option></select></label>`:''}
+            <label class="f"><span class="req">생년월</span><input class="i" name="birth" type="month" min="1940-01" max="2006-12" required></label>
+            <label class="f"><span class="req">성별</span><select class="i" name="gender" required><option value="">선택</option><option>남</option><option>여</option></select></label>
+            <label class="f full"><span class="req">주요 업무</span><textarea class="i" name="duty" placeholder="담당하시는 업무를 자유롭게 적어 주세요" required></textarea></label>
+            <label class="f"><span class="req">현 기관 근무기간</span><input class="i" name="tenure" placeholder="예: 2019년 03월 ~ 현재" required></label>
+            <label class="f"><span class="req">사회복지 근무 경력</span><input class="i" name="career" placeholder="예: 12년" required></label>
+            <label class="f"><span class="req">학력</span><select class="i" name="edu" required><option value="">선택</option><option>대학졸업</option><option>석사재학</option><option>석사졸업</option><option>박사재학</option><option>박사졸업</option></select></label>
+            <label class="f">자격증<input class="i" name="license" placeholder="예: 사회복지사 1급"></label>
+          </div>
+        </section>
+
+        <section class="section"><h2>연구참여 동의</h2>
+          <div class="consent card" style="padding:6px 18px">
+            <label class="all"><input type="checkbox" id="call"> 아래 내용에 모두 동의합니다</label>
+            ${CONSENTS.map(([k,t])=>`<label><input type="checkbox" name="${k}"> ${esc(t)}</label>`).join('')}
+          </div>
+          <p class="small muted" style="margin-top:8px">면접 당일 현장에서 동의서 서면 2부에 서명을 한 번 더 받습니다.</p>
+        </section>
+      </div>
+
+      <div id="declinePart" hidden><section class="section"><h2>남기실 말씀이 있다면</h2>
+        <textarea class="i" name="reason" placeholder="선택 사항입니다. 다른 분을 추천해 주셔도 좋습니다."></textarea></section></div>
+
+      <p class="err" id="perr" role="alert"></p>
+      <div class="section" id="submitRow" ${mode==='invite'?'hidden':''}><button class="btn primary" id="psub" style="width:100%;justify-content:center;padding:14px;font-size:16px">참여 신청 보내기</button></div>
+    </form>
+    <p class="small muted" style="margin-top:28px;text-align:center">문의 ${esc(CONFIG.CONTACT_NAME)} ${esc(CONFIG.CONTACT_TEL)}</p>
+  </div>`;
+
+  const f = $('#pf');
+  f.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
+    state.decision=b.dataset.d;
+    f.querySelectorAll('[data-d]').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    $('#acceptPart').hidden = state.decision!=='accept';
+    $('#declinePart').hidden = state.decision!=='decline';
+    $('#submitRow').hidden = false;
+    $('#psub').textContent = state.decision==='accept' ? '참여 신청 보내기' : '불참 알리기';
+    $('#perr').textContent='';
+  });
+  const boxes = CONSENTS.map(([k])=>f[k]);
+  $('#call').onchange = e => boxes.forEach(b=>b.checked=e.target.checked);
+  boxes.forEach(b=>b.onchange=()=>{ $('#call').checked = boxes.every(x=>x.checked); });
+
+  f.onsubmit = async e => {
+    e.preventDefault(); const err=$('#perr'); err.textContent='';
+    const fd = new FormData(f); const v = k => (fd.get(k)||'').toString().trim();
+    let payload;
+    if(state.decision==='decline'){
+      payload = { t:ctx.token, decision:'decline', reason:v('reason') };
+    }else{
+      const chosen = fd.getAll('slot');
+      if(!chosen.length){ err.textContent='참석 가능한 시간을 1개 이상 골라 주세요.'; return; }
+      const miss = [...f.querySelectorAll('#acceptPart [required]')].find(x=>!x.value.trim());
+      if(miss){ err.textContent=`‘${miss.closest('label').querySelector('span').textContent}’ 항목을 적어 주세요.`; miss.focus(); return; }
+      if(!boxes.every(b=>b.checked)){ err.textContent='연구참여 동의 항목에 모두 동의해 주셔야 참여하실 수 있습니다.'; return; }
+      const birth=v('birth'); const info={ birth: birth? birth.replace('-','년 ')+'월':'', gender:v('gender'), duty:v('duty'), tenure:v('tenure'), career:v('career'), edu:v('edu'), license:v('license'), org:v('org'), position:v('position'), region:v('region') };
+      const consents={c1:true,c2:true,c3:true,c4:true};
+      payload = mode==='invite'
+        ? { t:ctx.token, decision:'accept', slots:chosen, info, consents }
+        : { group:g, name:v('name'), phone:v('phone'), email:v('email'), org:v('org'), position:v('position'), region:v('region'), size:v('size'), slots:chosen, info, consents };
+    }
+    const btn=$('#psub'); btn.disabled=true; btn.textContent='보내는 중…';
+    try{
+      await apiPost(mode==='invite'?'respond':'apply', payload);
+      window.scrollTo(0,0);
+      app.innerHTML = state.decision==='decline'
+        ? `<div class="wrap narrow"><div class="done no"><div class="mark">✓</div><h1>답변 감사합니다</h1><p class="muted">불참 의사를 전달했습니다. 바쁘신 중에 알려 주셔서 감사합니다.</p></div></div>`
+        : `<div class="wrap narrow g-${esc(g)}"><div class="done"><div class="mark">✓</div><h1>참여 신청을 받았습니다</h1><p class="muted">그룹 일정이 정해지면 적어 주신 연락처로 확정 시간과 장소를 안내드립니다.<br>면접 전 질문지와 참고자료(정부 AI 윤리원칙)도 함께 보내드립니다.</p></div></div>`;
+    }catch(e2){ err.textContent=e2.message; btn.disabled=false; btn.textContent= state.decision==='decline'?'불참 알리기':'참여 신청 보내기'; }
+  };
+}
+
+route();
+</script>
+</body>
+</html>
